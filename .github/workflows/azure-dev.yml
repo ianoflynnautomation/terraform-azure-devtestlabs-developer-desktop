@@ -27,6 +27,11 @@ jobs:
       - name: Install azd
         uses: Azure/setup-azd@v1.0.0
 
+      - name: Login az
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Set az account
         uses: azure/CLI@v1
         with:
