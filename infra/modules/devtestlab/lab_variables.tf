@@ -37,7 +37,7 @@ variable "windows_client_vm_count" {
   type        = number
 
   validation {
-    condition     = var.vm_count > 0 && var.vm_count <= 10
+    condition     = var.windows_client_vm_count > 0 && var.windows_client_vm_count <= 10
     error_message = "The number of virtual machines must be greater than 0 and less than or equal to 10."
   }
 }
