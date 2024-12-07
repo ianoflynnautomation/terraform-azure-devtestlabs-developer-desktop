@@ -17,3 +17,8 @@ variable "windows_client_vm_count" {
   default     = 2
 }
 
+variable "deployment_type" {
+  description = "The type of deployment."
+  type        = string
+  default     = "on-prem"
+}

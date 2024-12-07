@@ -21,6 +21,12 @@ variable "deployment_type" {
   }
 }
 
+variable "resource_group_name" {
+  description = "The name of the resource group."
+  type        = string
+
+}
+
 variable "lab_name" {
   type    = string
   default = "DevTestLab01"

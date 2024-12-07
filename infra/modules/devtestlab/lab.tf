@@ -1,3 +1,4 @@
+data "azurerm_client_config" "current" {}
 
 terraform {
   required_providers {
@@ -49,6 +50,7 @@ locals {
   windows_client_vm_logon_password  = random_password.password[3].result
   windows_client_vm_password        = random_password.password[4].result
   windows_client_vm_name            = "wcvm01"
+  vm_count_total                    = [for i in range(var.windows_client_vm_count) : tostring(i)]
   windows_client_vm_config = {
     dev = {
       image_offer  = "Windows-11"
@@ -123,15 +125,15 @@ data "azurerm_key_vault_secret" "ado_account_name" {
 
 resource "azurerm_dev_test_lab" "lab" {
   name                = var.lab_name
-  location            = azurerm_resource_group.rg-devtestlabs.location
-  resource_group_name = azurerm_resource_group.rg-devtestlabs.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
   tags                = var.tags
 }
 
 resource "azurerm_dev_test_virtual_network" "vnet" {
   name                = local.lab_virtual_network_name
   lab_name            = azurerm_dev_test_lab.lab.name
-  resource_group_name = azurerm_resource_group.rg-devtestlabs.name
+  resource_group_name = var.resource_group_name
   description         = "Virtual network for the DevTestLab"
   tags                = var.tags
 
@@ -145,22 +147,23 @@ resource "azurerm_dev_test_virtual_network" "vnet" {
 # Deploy linux and windows VMs with artifacts in the DevTestLab
 # ------------------------------------------------------------------------------------------------------
 
-resource "azapi_resource" "vm-linux-server" {
+resource "azapi_resource" "vm-linux-app-server" {
   count                     = var.deployment_type == "on-prem" ? 1 : 0
   type                      = "Microsoft.DevTestLab/labs/virtualmachines@2018-09-15"
   name                      = local.linux_app_server_vm_name
-  location                  = azurerm_resource_group.rg-devtestlabs.location
+  location                  = var.location
   parent_id                 = azurerm_dev_test_lab.lab.id
+  depends_on                = [azurerm_dev_test_lab.lab]
   tags                      = var.tags
   schema_validation_enabled = false # This is required for the schema to be accepted by the API
-  body = jsonencode({
+  body = {
     properties = {
       allowClaim = local.allow_claim
       artifacts = [
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            data.azurerm_resource_group.lab_resource_group.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "linux-apt-package"),
@@ -182,7 +185,7 @@ resource "azapi_resource" "vm-linux-server" {
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            data.azurerm_resource_group.lab_resource_group.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "linux-installer-package"),
@@ -191,7 +194,7 @@ resource "azapi_resource" "vm-linux-server" {
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            data.azurerm_resource_group.lab_resource_group.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "linux-vsts-build-agent"),
@@ -199,15 +202,15 @@ resource "azapi_resource" "vm-linux-server" {
           "parameters" = [
             {
               "name"  = "adoAccount"
-              "value" = azurerm_key_vault_secret.ado_account_name.value
+              "value" = data.azurerm_key_vault_secret.ado_account_name.value
             },
             {
               "name"  = "adoPat"
-              "value" = azurerm_key_vault_secret.ado_pat_token.value
+              "value" = data.azurerm_key_vault_secret.ado_pat_token.value
             },
             {
               "name"  = "adoPool"
-              "value" = azurerm_key_vault_secret.ado_pool_name.value
+              "value" = data.azurerm_key_vault_secret.ado_pool_name.value
             },
             {
               "name"  = "agentPath"
@@ -222,9 +225,9 @@ resource "azapi_resource" "vm-linux-server" {
       ]
 
       galleryImageReference = {
-        offer     = linux_app_server_vm_config[var.environment_name].image_offer
+        offer     = local.linux_app_server_vm_config[var.environment_name].image_offer
         publisher = "canonical"
-        sku       = linux_app_server_vm_config[var.environment_name].image_sku
+        sku       = local.linux_app_server_vm_config[var.environment_name].image_sku
         osType    = "Linux"
         version   = "latest"
       }
@@ -234,30 +237,31 @@ resource "azapi_resource" "vm-linux-server" {
       labSubnetName       = azurerm_dev_test_virtual_network.vnet.subnet[0].name
       labVirtualNetworkId = azurerm_dev_test_virtual_network.vnet.id
       password            = local.vm_admin_password
-      size                = linux_app_server_vm_config[var.environment_name].vm_size
-      storageType         = linux_app_server_vm_config[var.environment_name].storage_type
+      size                = local.linux_app_server_vm_config[var.environment_name].vm_size
+      storageType         = local.linux_app_server_vm_config[var.environment_name].storage_type
       userName            = local.linux_app_server_vm_username
 
     }
-  })
+  }
 }
 
 resource "azapi_resource" "vm-windows-client" {
-  for_each                  = toset(var.windows_client_vm_count) # This is required to create multiple VMs
+  for_each                  = toset(local.vm_count_total) # This is required to create multiple VMs
   type                      = "Microsoft.DevTestLab/labs/virtualmachines@2018-09-15"
   name                      = "${local.windows_client_vm_name}-${each.key}"
-  location                  = azurerm_resource_group.rg-devtestlabs.location
+  location                  = var.location
   parent_id                 = azurerm_dev_test_lab.lab.id
+  depends_on                = [azurerm_dev_test_lab.lab]
   tags                      = var.tags
   schema_validation_enabled = false # This is required for the schema to be accepted by the API
-  body = jsonencode({
+  body = {
     properties = {
       allowClaim = local.allow_claim
       artifacts = [
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            azurerm_resource_group.rg-devtestlabs.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "windows-chocolatey"),
@@ -283,7 +287,7 @@ resource "azapi_resource" "vm-windows-client" {
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            azurerm_resource_group.rg-devtestlabs.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "windows-chocolatey"),
@@ -309,7 +313,7 @@ resource "azapi_resource" "vm-windows-client" {
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            azurerm_resource_group.rg-devtestlabs.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "windows-chocolatey"),
@@ -332,7 +336,7 @@ resource "azapi_resource" "vm-windows-client" {
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            azurerm_resource_group.rg-devtestlabs.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "windows-chocolatey"),
@@ -356,7 +360,7 @@ resource "azapi_resource" "vm-windows-client" {
         {
           artifactId = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.DevTestLab/labs/%s/artifactSources/%s/artifacts/%s",
             data.azurerm_client_config.current.subscription_id,
-            azurerm_resource_group.rg-devtestlabs.name,
+            var.resource_group_name,
             var.lab_name,
             "public repo",
           "windows-vsts-build-agent"),
@@ -364,11 +368,11 @@ resource "azapi_resource" "vm-windows-client" {
           parameters = [
             {
               name  = "vstsAccount"
-              value = azurerm_key_vault_secret.ado_account_name.value
+              value = data.azurerm_key_vault_secret.ado_account_name.value
             },
             {
               name  = "vstsPassword"
-              value = azurerm_key_vault_secret.ado_pat_token.value
+              value = data.azurerm_key_vault_secret.ado_pat_token.value
             },
             {
               name  = "agentName"
@@ -380,7 +384,7 @@ resource "azapi_resource" "vm-windows-client" {
             },
             {
               name  = "poolName"
-              value = azurerm_key_vault_secret.ado_pool_name.value
+              value = data.azurerm_key_vault_secret.ado_pool_name.value
             },
             {
               name  = "RunAsAutoLogon"
@@ -426,5 +430,5 @@ resource "azapi_resource" "vm-windows-client" {
       userName            = local.windows_client_vm_username
 
     }
-  })
+  }
 }

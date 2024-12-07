@@ -18,12 +18,12 @@ output "LAB_WINDOWS_CLIENT_VM_NAME" {
   sensitive = false
 }
 
-output "LINUX_APP_SERVER_VM_ID" {
-  value     = azapi_resource.vm-linux-server.id
-  sensitive = false
-}
+# output "LINUX_APP_SERVER_VM_ID" {
+#   value     = azapi_resource.vm-linux-app-server.id
+#   sensitive = false
+# }
 
-output "LINUX_APP_SERVER_VM_NAME" {
-  value     = azapi_resource.vm-linux-server.name
-  sensitive = false
-}
+# output "LINUX_APP_SERVER_VM_NAME" {
+#   value     = azapi_resource.vm-linux-app-server.name
+#   sensitive = false
+# }

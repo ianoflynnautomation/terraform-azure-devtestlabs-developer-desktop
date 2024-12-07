@@ -1,3 +1,3 @@
-output "LAB_NAME" {
-  value = module.lab.name
-}
+# output "LAB_NAME" {
+#   value = module.lab.name
+# }

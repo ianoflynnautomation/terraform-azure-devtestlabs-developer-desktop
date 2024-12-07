@@ -1,8 +1,7 @@
 
 locals {
-  tags                          = { azd-env-name : var.environment_name }
-  windows_client_vm_count_total = [for i in range(var.windows_client_vm_count) : tostring(i)]
-  lab_name                      = "lab-${var.environment_name}"
+  tags     = { azd-env-name : var.environment_name }
+  lab_name = "lab-${var.environment_name}"
 }
 
 resource "random_password" "password" {
@@ -39,7 +38,9 @@ resource "azurerm_resource_group" "rg-devtestlabs" {
 module "lab" {
   source                  = "./modules/devtestlab"
   location                = azurerm_resource_group.rg-devtestlabs.location
+  resource_group_name     = azurerm_resource_group.rg-devtestlabs.name
   lab_name                = local.lab_name
-  windows_client_vm_count = local.windows_client_vm_count_total
+  windows_client_vm_count = var.windows_client_vm_count
+  deployment_type         = var.deployment_type
   tags                    = local.tags
 }
