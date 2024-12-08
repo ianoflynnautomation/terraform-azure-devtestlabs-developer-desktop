@@ -31,7 +31,7 @@ locals {
   run_as_auto_logon                 = "false"
   agent_name_suffix                 = ""
   windows_logon_account             = ""
-  ado_agent_name                    = "agent"
+  ado_agent_name                    = "agent1"
   az_ignore_checksums               = "false"
   az_allow_empty_checksums          = "true"
   az_packages                       = "azure-cli"

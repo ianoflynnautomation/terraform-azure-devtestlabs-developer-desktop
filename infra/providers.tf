@@ -20,10 +20,8 @@ terraform {
       source  = "hashicorp/random"
       version = "3.6.2"
     }
-
   }
 }
-
 
 provider "azurerm" {
   features {
@@ -43,6 +41,4 @@ provider "random" {
 provider "azurecaf" {
 }
 
-
-# Make client_id, tenant_id, subscription_id and object_id variables
 data "azurerm_client_config" "current" {}
