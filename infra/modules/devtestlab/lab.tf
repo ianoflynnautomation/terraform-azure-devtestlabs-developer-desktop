@@ -100,8 +100,8 @@ resource "random_password" "password" {
 # ------------------------------------------------------------------------------------------------------
 
 data "azurerm_key_vault" "existing" {
-  name                = "kv-test-terraform"
-  resource_group_name = "test-terraform-rg"
+  name                = "kv-test-terraform"  // NOTE: Replace with your Key Vault name
+  resource_group_name = "test-terraform-rg" // NOTE: Replace with your Resource Group name
 }
 
 data "azurerm_key_vault_secret" "ado_pat_token" {
