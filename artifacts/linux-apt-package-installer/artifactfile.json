@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+  "title": "APT Package Installer",
+  "description": "Updates APT and installs one or more packages.",
+  "publisher": "Custom",
+  "targetOsType": "Linux",
+  "parameters": {
+    "packages": {
+      "type": "string",
+      "displayName": "Packages to Install",
+      "description": "A space-separated list of packages to install (e.g., 'docker-compose git')."
+    },
+    "update": {
+      "type": "bool",
+      "displayName": "Run apt-get update",
+      "description": "Specifies whether to run 'apt-get update' before installing packages.",
+      "defaultValue": true
+    }
+  },
+  "runCommand": {
+    "commandToExecute": "[concat('sh install-apt-package.sh \"', parameters('packages'), '\" \"', parameters('update'), '\"')]"
+  }
+}

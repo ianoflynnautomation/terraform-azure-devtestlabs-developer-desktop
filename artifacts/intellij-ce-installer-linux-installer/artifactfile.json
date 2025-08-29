@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+  "title": "Install IntelliJ IDEA (Community Edition for Linux)",
+  "publisher": "My Custom Artifacts",
+  "description": "Downloads and installs the latest stable version of IntelliJ IDEA Community Edition for Linux.",
+  "tags": [
+    "IntelliJ",
+    "IDE",
+    "Development",
+    "Java",
+    "Linux"
+  ],
+  "targetOsType": "Linux",
+  "runCommand": {
+    "commandToExecute": "sh Install-IntelliJ-CE.sh"
+  }
+}

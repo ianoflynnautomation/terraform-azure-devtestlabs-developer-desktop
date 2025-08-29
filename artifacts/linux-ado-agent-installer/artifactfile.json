@@ -1,0 +1,17 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+    "title": "Azure DevOps Agent (Linux)",
+    "description": "Installs and configures a self-hosted Azure DevOps agent.",
+    "publisher": "Custom",
+    "targetOsType": "Linux",
+    "parameters": {
+        "adoAccount": { "type": "string", "displayName": "Azure DevOps Organization URL" },
+        "adoPat": { "type": "securestring", "displayName": "Personal Access Token (PAT)" },
+        "adoPool": { "type": "string", "displayName": "Agent Pool Name" },
+        "agentName": { "type": "string", "displayName": "Agent Name" },
+        "agentPath": { "type": "string", "displayName": "Installation Path", "defaultValue": "/agent" }
+    },
+    "runCommand": {
+        "commandToExecute": "[concat('sh install.sh \"', parameters('adoAccount'), '\" \"', parameters('adoPat'), '\" \"', parameters('adoPool'), '\" \"', parameters('agentName'), '\" \"', parameters('agentPath'), '\"')]"
+    }
+}

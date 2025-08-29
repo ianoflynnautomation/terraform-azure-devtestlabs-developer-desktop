@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+  "title": "Install Visual Studio Code (for Linux)",
+  "publisher": "My Custom Artifacts",
+  "description": "Downloads and installs the latest stable version of Visual Studio Code for Linux.",
+  "tags": [
+    "VSCode",
+    "IDE",
+    "Development",
+    "Editor",
+    "Linux"
+  ],
+  "targetOsType": "Linux",
+  "runCommand": {
+    "commandToExecute": "sh Install-VSCode.sh"
+  }
+}

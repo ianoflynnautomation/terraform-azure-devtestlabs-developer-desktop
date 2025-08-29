@@ -1,6 +1,6 @@
-# Configure the Azure Provider
+
 terraform {
-  required_version = ">= 1.1.7, < 2.0.0"
+  required_version = ">= 1.9.0, < 2.0.0"
   backend "azurerm" {
   }
   required_providers {
@@ -10,15 +10,15 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "4.13.0"
+      version = "4.42.0"
     }
     azapi = {
       source  = "Azure/azapi"
-      version = "2.1.0"
+      version = "2.6.1"
     }
     random = {
       source  = "hashicorp/random"
-      version = "3.6.2"
+      version = "3.7.2"
     }
   }
 }
@@ -28,8 +28,8 @@ provider "azurerm" {
     resource_group {
       prevent_deletion_if_contains_resources = false
     }
-
   }
+  use_msi = true 
 }
 
 provider "azapi" {
