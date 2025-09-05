@@ -2,6 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
+      version = "4.42.0"
     }
   }
 }
@@ -51,20 +52,16 @@ resource "azurerm_key_vault" "key_vault" {
 }
 
 
-resource "azurerm_monitor_diagnostic_setting" "settings" {
-  name                       = "DiagnosticsSettings"
-  target_resource_id         = azurerm_key_vault.key_vault.id
-  log_analytics_workspace_id = var.log_analytics_workspace_id
+# resource "azurerm_monitor_diagnostic_setting" "settings" {
+#   name                       = "DiagnosticsSettings"
+#   target_resource_id         = azurerm_key_vault.key_vault.id
+#   log_analytics_workspace_id = var.log_analytics_workspace_id
 
-  enabled_log {
-    category = "AuditEvent"
-  }
+#   enabled_log {
+#     category = "AuditEvent"
+#   }
 
-  enabled_log {
-    category = "AzurePolicyEvaluationDetails"
-  }
-
-  metric {
-    category = "AllMetrics"
-  }
-}
+#   enabled_log {
+#     category = "AzurePolicyEvaluationDetails"
+#   }
+# }

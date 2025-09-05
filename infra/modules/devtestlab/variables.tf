@@ -60,31 +60,55 @@ variable "support" {
   default = {}
 }
 
-# --- NEW CONFIGURABLE VNET SETTINGS ---
 
 variable "subnet_overrides" {
   description = "A list of subnet configurations for the virtual network."
   type = list(object({
-    name                            = string
-    useInVmCreationPermission       = string
-    usePublicIpAddressPermission    = string
-    sharedPublicIpAddressConfiguration = object({
+    labSubnetName                = string
+    useInVmCreationPermission    = string
+    usePublicIpAddressPermission = string
+    sharedPublicIpAddressConfiguration = optional(object({
       allowedPorts = list(object({
         transportProtocol = string
-        port              = number
+        backendPort       = number
       }))
-    })
-    virtualNetworkPoolConfiguration = object({
-      cidrs = list(string)
-    })
+    }))
+    virtualNetworkPoolName = optional(string)
   }))
   default = [
     {
-      name                         = "default"
+      labSubnetName                = "vnet-dtl-dev-swnSubnet"
       useInVmCreationPermission    = "Allow"
-      usePublicIpAddressPermission = "Allow"
-      sharedPublicIpAddressConfiguration = null
-      virtualNetworkPoolConfiguration    = null
+      usePublicIpAddressPermission = "Deny"
+      sharedPublicIpAddressConfiguration = {
+        allowedPorts = [
+          {
+            transportProtocol = "Tcp"
+            backendPort       = 3389
+          },
+          {
+            transportProtocol = "Tcp"
+            backendPort       = 22
+          }
+        ]
+      }
+      virtualNetworkPoolName = null
+    }
+  ]
+}
+
+variable "allowed_subnets" {
+  description = "A list of allowed subnets for the virtual network."
+  type = list(object({
+    allowPublicIp = string
+    labSubnetName = string
+    resourceId    = string
+  }))
+  default = [
+    {
+      allowPublicIp = "Deny"
+      labSubnetName = "default"
+      resourceId    = ""
     }
   ]
 }

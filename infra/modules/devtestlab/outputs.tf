@@ -13,7 +13,8 @@ output "vnet_id" {
   value       = azapi_resource.vnet.id
 }
 
+
 output "subnet_name" {
   description = "The name of the first subnet in the lab's VNet."
-  value       = try(jsondecode(azapi_resource.vnet.output).properties.subnetOverrides[0].name, null)
+  value       = azapi_resource.vnet.body.properties.subnetOverrides[0].labSubnetName
 }

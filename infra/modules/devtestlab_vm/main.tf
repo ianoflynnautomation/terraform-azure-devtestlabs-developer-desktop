@@ -2,21 +2,19 @@ data "azurerm_client_config" "current" {}
 
 terraform {
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "2.6.1"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
+      version = "4.42.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.7.2"
     }
   }
-}
-
-locals {
-  ama_artifact_name = var.gallery_image_reference.osType == "Windows" ? "ama-installer-windows" : "ama-installer-linux"
-
-  ama_artifact_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.DevTestLab/labs/${split("/", var.lab_id)[8]}/artifactSources/My-Custom-Repo/artifacts/${local.ama_artifact_name}"
-  
-  ama_artifact = [{
-    artifactId = local.ama_artifact_id
-    parameters = []
-  }]
 }
 
 resource "random_password" "vm_password" {
@@ -36,15 +34,16 @@ resource "azurerm_key_vault_secret" "vm_password_secret" {
   }
 }
 
+
 resource "azapi_resource" "vm" {
   type                      = "Microsoft.DevTestLab/labs/virtualmachines@2018-09-15"
   name                      = var.vm_name
   location                  = var.location
   parent_id                 = var.lab_id
   tags                      = var.tags
-  schema_validation_enabled = false # Required for this older API version
+  schema_validation_enabled = false
 
-  body = jsonencode({
+  body = {
     properties = {
       galleryImageReference   = var.gallery_image_reference
       allowClaim              = false
@@ -55,10 +54,10 @@ resource "azapi_resource" "vm" {
       size                    = var.vm_size
       storageType             = var.storage_type
       userName                = var.admin_username
-      
-      artifacts = concat(var.artifacts, var.enable_log_analytics ? local.ama_artifact : [])
+
+      # artifacts = concat(var.artifacts, var.enable_log_analytics ? local.ama_artifact : [])
     }
-  })
+  }
 
   depends_on = [
     azurerm_key_vault_secret.vm_password_secret

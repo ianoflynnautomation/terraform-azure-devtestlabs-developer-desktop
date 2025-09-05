@@ -1,25 +1,17 @@
-variable "resource_group_name" {
-  description = "The name of the resource group where resources will be created."
-  type        = string
-}
-
 variable "location" {
   description = "The Azure region where resources will be deployed."
   type        = string
+  default     = "switzerlandnorth"
 }
 
 variable "environment" {
   description = "The deployment environment name (e.g., 'dev', 'staging')."
   type        = string
+  default     = "dev"
   validation {
     condition     = contains(["dev", "staging"], var.environment)
     error_message = "The environment must be either 'dev' or 'staging'."
   }
-}
-
-variable "lab_name" {
-  description = "The base name for the DevTestLab."
-  type        = string
 }
 
 variable "tags" {
@@ -28,12 +20,11 @@ variable "tags" {
   default     = {}
 }
 
-variable "deploy_linux_vm" {
-  description = "Flag to control the deployment of the Linux VM."
-  type        = bool
-  default     = true
+variable "linux_vm_count" {
+  description = "Number of Linux VMs to create."
+  type        = number
+  default     = 1
 }
-
 variable "linux_vm_admin_username" {
   description = "Admin username for the Linux VM."
   type        = string
@@ -52,20 +43,22 @@ variable "windows_vm_admin_username" {
   default     = "winadmin"
 }
 
-variable "ado_account_name" {
-  description = "Azure DevOps account name for agent configuration."
+variable "dtl_storage_type" {
+  description = "The storage type for the Dev Test Lab. Can be 'Standard' or 'Premium'."
   type        = string
+  default     = "Premium"
 }
 
-variable "ado_pool_name" {
-  description = "Azure DevOps agent pool name for agent configuration."
-  type        = string
+variable "dtl_announcement" {
+  description = "Configuration for the lab announcement banner. Set to null to use the default."
+  type        = any
+  default     = null
 }
 
-variable "log_analytics_workspace_name" {
-  description = "Specifies the name of the log analytics workspace"
-  default     = "TestWorkspace"
-  type        = string
+variable "dtl_subnet_overrides" {
+  description = "A list of subnet configurations for the virtual network. Set to null to use the default."
+  type        = any
+  default     = null
 }
 
 variable "solution_plan_map" {
@@ -85,41 +78,58 @@ variable "enable_log_analytics" {
   default     = false
 }
 
-variable "storage_account_kind" {
-  description = "(Optional) Specifies the account kind of the storage account"
-  default     = "StorageV2"
-  type        = string
+variable "key_vault_enabled_for_deployment" {
+  description = "(Optional) Boolean flag to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault."
+  type        = bool
+  default     = true
+}
 
+variable "key_vault_enabled_for_disk_encryption" {
+  description = "(Optional) Boolean flag to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."
+  type        = bool
+  default     = true
+}
+
+variable "key_vault_enabled_for_template_deployment" {
+  description = "(Optional) Boolean flag to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault."
+  type        = bool
+  default     = true
+}
+
+variable "key_vault_enable_rbac_authorization" {
+  description = "(Optional) Boolean flag to specify whether Azure Key Vault uses Role Based Access Control (RBAC) for authorization of data actions."
+  type        = bool
+  default     = true
+}
+
+variable "key_vault_purge_protection_enabled" {
+  description = "(Optional) Is Purge Protection enabled for this Key Vault?"
+  type        = bool
+  default     = true
+}
+
+variable "key_vault_soft_delete_retention_days" {
+  description = "(Optional) The number of days that items should be retained for once soft-deleted. This value can be between 7 and 90 (the default) days."
+  type        = number
+  default     = 30
+}
+
+variable "key_vault_bypass" {
+  description = "(Required) Specifies which traffic can bypass the network rules. Possible values are AzureServices and None."
+  type        = string
+  default     = "AzureServices"
   validation {
-    condition     = contains(["Storage", "StorageV2"], var.storage_account_kind)
-    error_message = "The account kind of the storage account is invalid."
+    condition     = contains(["AzureServices", "None"], var.key_vault_bypass)
+    error_message = "The value of the bypass property of the key vault is invalid."
   }
 }
 
-variable "storage_account_replication_type" {
-  description = "(Optional) Specifies the replication type of the storage account"
-  default     = "LRS"
+variable "key_vault_default_action" {
+  description = "(Required) The Default Action to use when no rules match from ip_rules / virtual_network_subnet_ids. Possible values are Allow and Deny."
   type        = string
-
+  default     = "Allow"
   validation {
-    condition     = contains(["LRS", "ZRS", "GRS", "GZRS", "RA-GRS", "RA-GZRS"], var.storage_account_replication_type)
-    error_message = "The replication type of the storage account is invalid."
+    condition     = contains(["Allow", "Deny"], var.key_vault_default_action)
+    error_message = "The value of the default action property of the key vault is invalid."
   }
-}
-
-variable "storage_account_tier" {
-  description = "(Optional) Specifies the account tier of the storage account"
-  default     = "Standard"
-  type        = string
-
-  validation {
-    condition     = contains(["Standard", "Premium"], var.storage_account_tier)
-    error_message = "The account tier of the storage account is invalid."
-  }
-}
-
-variable "container_name" {
-  description = "(Required) Specifies the name of the container that contains the custom script."
-  type        = string
-  default     = "scripts"
 }

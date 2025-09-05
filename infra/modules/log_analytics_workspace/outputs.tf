@@ -9,8 +9,8 @@ description = "Specifies the primary shared key of the log analytics workspace"
 }
 
 output "workspace_id" {
-  value = azurerm_log_analytics_workspace.law.workspace_id
-  description = "Specifies the workspace id of the log analytics workspace"
+  description = "The ID of the Log Analytics Workspace."
+  value       = azurerm_log_analytics_workspace.law.id 
 }
 
 output "name" {
