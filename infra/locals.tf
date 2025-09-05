@@ -17,7 +17,7 @@ locals {
   vm_configs = {
     dev = {
       linux_default = {
-        size         = "Standard_D4as_v5"
+        size         = "Standard_D4s_v4"
         storage_type = "StandardSSD"
         image_reference = {
           publisher = "canonical"
@@ -28,7 +28,7 @@ locals {
         }
       }
       windows_default = {
-        size         = "Standard_D4as_v5"
+        size         = "Standard_D4s_v4"
         storage_type = "StandardSSD"
         image_reference = {
           publisher = "MicrosoftWindowsDesktop"
@@ -41,7 +41,7 @@ locals {
     }
     staging = {
       linux_default = {
-        size         = "Standard_D8as_v5"
+        size         = "Standard_D8ds_v4"
         storage_type = "PremiumSSD"
         image_reference = {
           publisher = "canonical"
@@ -52,7 +52,7 @@ locals {
         }
       }
       windows_default = {
-        size         = "Standard_D8as_v5"
+        size         = "Standard_D8ds_v4"
         storage_type = "PremiumSSD"
         image_reference = {
           publisher = "MicrosoftWindowsDesktop"

@@ -1,0 +1,43 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+    "title": "Apache JMeter",
+    "publisher": "Community",
+    "description": "Installs Apache JMeter and its OpenJDK prerequisite. It sets the required environment variables (JAVA_HOME, Path) and creates a desktop shortcut for the JMeter GUI.",
+    "tags": [
+        "JMeter",
+        "Testing",
+        "Performance",
+        "Windows"
+    ],
+    "iconUri": "https://jmeter.apache.org/images/logo.svg",
+    "targetOsType": "Windows",
+    "parameters": {
+        "jmeterVersion": {
+            "type": "string",
+            "displayName": "JMeter Version",
+            "description": "The version of Apache JMeter to install.",
+            "defaultValue": "5.6.3"
+        },
+        "jdkVersion": {
+            "type": "string",
+            "displayName": "OpenJDK (Temurin) Version",
+            "description": "The version of OpenJDK to install as a prerequisite (e.g., 17.0.10+7).",
+            "defaultValue": "17.0.10+7"
+        },
+        "installDrive": {
+            "type": "string",
+            "displayName": "Install Drive",
+            "description": "The drive letter where JMeter and OpenJDK will be installed.",
+            "defaultValue": "C",
+            "allowedValues": [
+                "C",
+                "D",
+                "E",
+                "F"
+            ]
+        }
+    },
+    "runCommand": {
+        "commandToExecute": "[concat('powershell.exe -ExecutionPolicy bypass -File .\\install-jmeter.ps1', ' -jmeterVersion ''', parameters('jmeterVersion'), '''', ' -jdkVersion ''', parameters('jdkVersion'), '''', ' -installDrive ''', parameters('installDrive'), '''')]"
+    }
+}

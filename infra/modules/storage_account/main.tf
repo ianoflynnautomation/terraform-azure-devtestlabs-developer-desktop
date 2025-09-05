@@ -23,7 +23,7 @@ resource "azurerm_storage_account" "storage_account" {
   }
 
   lifecycle {
-    
+
     ignore_changes = [
       tags
     ]

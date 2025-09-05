@@ -5,12 +5,12 @@ variable "name" {
 
 variable "resource_group_name" {
   description = "(Required) Specifies the resource group name"
-  type = string
+  type        = string
 }
 
 variable "location" {
   description = "(Required) Specifies the location of the log analytics workspace"
-  type = string
+  type        = string
 }
 
 variable "sku" {

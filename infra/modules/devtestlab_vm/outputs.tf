@@ -10,5 +10,5 @@ output "name" {
 
 output "password_secret_name" {
   description = "The name of the secret in Azure Key Vault containing the VM's password."
-  value = azurerm_key_vault_secret.vm_password_secret.name
+  value       = azurerm_key_vault_secret.vm_password_secret.name
 }

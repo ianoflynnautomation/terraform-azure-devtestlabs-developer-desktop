@@ -1,7 +1,6 @@
 
 data "azurerm_client_config" "current" {}
 
-
 # ------------------------------------------------------------------------------------------------------
 # Deploy resource Group
 # ------------------------------------------------------------------------------------------------------
@@ -12,29 +11,6 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
   tags     = var.tags
 }
-
-# ------------------------------------------------------------------------------------------------------
-# Deploy storage account
-# ------------------------------------------------------------------------------------------------------
-
-# resource "random_string" "storage_account_suffix" {
-#   length  = 8
-#   special = false
-#   lower   = true
-#   upper   = false
-# }
-
-# module "storage_account" {
-#   source              = "./modules/storage_account"
-#   name                = "sa${random_string.storage_account_suffix.result}"
-#   location            = var.location
-#   resource_group_name = azurerm_resource_group.rg.name
-#   account_kind        = var.storage_account_kind
-#   account_tier        = var.storage_account_tier
-#   replication_type    = var.storage_account_replication_type
-#   container_name      = var.container_name
-#   tags = var.tags
-# }
 
 # ------------------------------------------------------------------------------------------------------
 # Deploy log analytics workspace

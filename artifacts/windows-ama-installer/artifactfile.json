@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2016-11-28/dtlArtifacts.json",
+  "title": "Install or Update Azure Monitor Agent (AMA)",
+  "publisher": "Community",
+  "description": "Installs or updates the Azure Monitor Agent (AMA) for Windows. This agent collects monitoring data and is a prerequisite for features like VM insights and Microsoft Sentinel. This artifact can optionally associate the agent with a Data Collection Rule (DCR) after installation.",
+  "tags": [
+    "AMA",
+    "Azure Monitor",
+    "Agent",
+    "Windows",
+    "DCR"
+  ],
+  "iconUri": "https://portal.azure.com/favicon.ico",
+  "targetOsType": "Windows",
+  "parameters": {
+    "dataCollectionRuleId": {
+      "type": "string",
+      "displayName": "Data Collection Rule (DCR) ID",
+      "description": "(Optional) The immutable ID of the Data Collection Rule to associate with this agent.",
+      "allowEmpty": true,
+      "defaultValue": ""
+    }
+  },
+  "runCommand": {
+    "commandToExecute": "[concat('powershell.exe -ExecutionPolicy bypass -File .\\Install-AMA.ps1', ' -dataCollectionRuleId ''', parameters('dataCollectionRuleId'), '''')]"
+  }
+}
