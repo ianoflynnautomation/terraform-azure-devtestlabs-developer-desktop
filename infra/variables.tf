@@ -133,3 +133,22 @@ variable "key_vault_default_action" {
     error_message = "The value of the default action property of the key vault is invalid."
   }
 }
+
+variable "vm_vnet_address_space" {
+  description = "Specifies the address space of the virtual virtual network"
+  default     = ["10.0.0.0/16"]
+  type        = list(string)
+}
+
+
+variable "vm_subnet_address_prefix" {
+  description = "Specifies the address prefix of the jumbox subnet"
+  default     = ["10.0.0.0/20"]
+  type        = list(string)
+}
+
+variable "bastion_subnet_address_prefix" {
+  description = "Specifies the address prefix of the firewall subnet"
+ default     = ["10.0.16.0/24"]
+  type        = list(string)
+}

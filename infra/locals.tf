@@ -11,8 +11,11 @@ locals {
   resource_group_name          = "rg-${local.workload}-${var.environment}-${local.location_short}"
   log_analytics_workspace_name = "la-${local.workload}-${var.environment}-${local.location_short}"
   key_vault_name               = "kv-${local.workload}-${var.environment}-${local.location_short}"
+  vnet_name                    = "vnet-${local.workload}-${var.environment}-${local.location_short}"
   dev_test_lab_name            = "dtl-${local.workload}-${var.environment}-${local.location_short}"
-  dev_test_lab_vnet_name       = "vnet-${local.workload}-${var.environment}-${local.location_short}"
+  dev_test_lab_vnet_name       = "dtlvnet-${local.workload}-${var.environment}-${local.location_short}"
+  network_security_group_name  = "nsg-${local.workload}-${var.environment}-${local.location_short}"
+  bastion_host_name            = "bas-${local.workload}-${var.environment}-${local.location_short}"
 
   vm_configs = {
     dev = {
@@ -107,9 +110,4 @@ locals {
     markdown = "Please keep costs in mind. All VMs will be shut down at 7 PM CET."
   }
 
-  default_dtl_subnet_overrides = [{
-    labSubnetName                = "${local.dev_test_lab_vnet_name}Subnet"
-    useInVmCreationPermission    = "Allow"
-    usePublicIpAddressPermission = "Default"
-  }]
 }

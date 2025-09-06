@@ -20,7 +20,22 @@ variable "tags" {
 }
 
 variable "lab_virtual_network_name" {
-  description = "Name for the lab's virtual network."
+  description = "Name for the lab's virtual network registration."
+  type        = string
+}
+
+variable "vm_subnet_name" {
+  description = "The name of the main subnet for lab VMs."
+  type        = string
+}
+
+variable "vm_subnet_id" {
+  description = "The resource ID of the main subnet for lab VMs."
+  type        = string
+}
+
+variable "bastion_subnet_id" {
+  description = "The resource ID of the AzureBastionSubnet."
   type        = string
 }
 
@@ -40,7 +55,6 @@ variable "premium_data_disks" {
   default     = "Disabled"
 }
 
-
 variable "announcement" {
   description = "Configuration for the lab announcement banner."
   type = object({
@@ -58,57 +72,4 @@ variable "support" {
     markdown = optional(string)
   })
   default = {}
-}
-
-
-variable "subnet_overrides" {
-  description = "A list of subnet configurations for the virtual network."
-  type = list(object({
-    labSubnetName                = string
-    useInVmCreationPermission    = string
-    usePublicIpAddressPermission = string
-    sharedPublicIpAddressConfiguration = optional(object({
-      allowedPorts = list(object({
-        transportProtocol = string
-        backendPort       = number
-      }))
-    }))
-    virtualNetworkPoolName = optional(string)
-  }))
-  default = [
-    {
-      labSubnetName                = "vnet-dtl-dev-swnSubnet"
-      useInVmCreationPermission    = "Allow"
-      usePublicIpAddressPermission = "Deny"
-      sharedPublicIpAddressConfiguration = {
-        allowedPorts = [
-          {
-            transportProtocol = "Tcp"
-            backendPort       = 3389
-          },
-          {
-            transportProtocol = "Tcp"
-            backendPort       = 22
-          }
-        ]
-      }
-      virtualNetworkPoolName = null
-    }
-  ]
-}
-
-variable "allowed_subnets" {
-  description = "A list of allowed subnets for the virtual network."
-  type = list(object({
-    allowPublicIp = string
-    labSubnetName = string
-    resourceId    = string
-  }))
-  default = [
-    {
-      allowPublicIp = "Deny"
-      labSubnetName = "default"
-      resourceId    = ""
-    }
-  ]
 }

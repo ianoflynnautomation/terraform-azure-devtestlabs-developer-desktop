@@ -26,7 +26,7 @@ resource "random_password" "vm_password" {
 }
 
 resource "azurerm_key_vault_secret" "vm_password_secret" {
-  name         = "vm-password-${var.vm_name}"
+  name         = "VM-PASSWORD-${var.vm_name}"
   value        = random_password.vm_password.result
   key_vault_id = var.key_vault_id
   tags = {

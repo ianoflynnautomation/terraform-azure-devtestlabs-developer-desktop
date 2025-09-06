@@ -43,15 +43,16 @@ resource "azapi_resource" "vnet" {
 
   body = {
     properties = {
-      allowedSubnets = var.allowed_subnets
       subnetOverrides = [
-        for s in var.subnet_overrides : {
-          resourceId                         = format("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s/subnets/%s", data.azurerm_client_config.current.subscription_id, var.resource_group_name, var.lab_virtual_network_name, s.labSubnetName)
-          labSubnetName                      = s.labSubnetName
-          useInVmCreationPermission          = s.useInVmCreationPermission
-          usePublicIpAddressPermission       = s.usePublicIpAddressPermission
-          sharedPublicIpAddressConfiguration = s.sharedPublicIpAddressConfiguration
-          virtualNetworkPoolName             = s.virtualNetworkPoolName
+        {
+          resourceId                = var.vm_subnet_id
+          labSubnetName             = var.vm_subnet_name
+          useInVmCreationPermission = "Allow"
+        },
+        {
+          resourceId                = var.bastion_subnet_id
+          labSubnetName             = "AzureBastionSubnet"
+          useInVmCreationPermission = "Deny"
         }
       ]
     }
