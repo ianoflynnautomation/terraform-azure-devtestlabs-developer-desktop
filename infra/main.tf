@@ -79,7 +79,7 @@ resource "azurerm_key_vault_secret" "ssh_private_key" {
 }
 
 # ------------------------------------------------------------------------------------------------------
-# Deploy virtual networks (nub and spoke)
+# Deploy virtual networks
 # ------------------------------------------------------------------------------------------------------
 
 module "vnet" {
@@ -93,7 +93,7 @@ module "vnet" {
 
   subnets = [
     {
-      name : "${local.dev_test_lab_vnet_name}Subnet"
+      name : "VmSubnet"
       address_prefixes : var.vm_subnet_address_prefix
       private_link_service_network_policies_enabled : false
       default_outbound_access_enabled : true
@@ -114,7 +114,6 @@ module "vnet" {
 
 }
 
-
 # ------------------------------------------------------------------------------------------------------
 # Deploy dev test lab
 # ------------------------------------------------------------------------------------------------------
@@ -123,21 +122,66 @@ module "vnet" {
 module "dev_test_lab" {
   source = "./modules/devtestlab"
 
-  lab_name                 = local.dev_test_lab_name
-  lab_virtual_network_name = local.vnet_name
-  location                 = var.location
-  resource_group_name      = azurerm_resource_group.rg.name
-  tags                     = var.tags
+  lab_name            = local.dev_test_lab_name
+  location            = var.location
+  parent_id           = azurerm_resource_group.rg.id
+  resource_group_name = azurerm_resource_group.rg.name
+  tags                = var.tags
+  lab_storage_type    = var.dtl_storage_type
+  announcement        = var.dtl_announcement == null ? local.default_dtl_announcement : var.dtl_announcement
 
-  lab_storage_type = var.dtl_storage_type
-  announcement     = var.dtl_announcement == null ? local.default_dtl_announcement : var.dtl_announcement
+}
 
-  vm_subnet_name    = "${local.vnet_name}Subnet"
-  vm_subnet_id      = module.vnet.subnet_ids["${local.dev_test_lab_vnet_name}Subnet"]
-  bastion_subnet_id = module.vnet.subnet_ids["AzureBastionSubnet"]
+# ------------------------------------------------------------------------------------------------------
+# Deploy dev test lab vnet
+# ------------------------------------------------------------------------------------------------------
+
+module "dev_test_lab_vnet" {
+  source = "./modules/devtestlabs_vnet"
+
+  name      = local.dev_test_lab_vnet_name
+  location  = var.location
+  parent_id = module.dev_test_lab.id
+  tags      = var.tags
+
+  allowed_subnets = [
+    {
+      allowPublicIp = "Deny"
+      labSubnetName = "VmSubnet"
+      resourceId = module.vnet.subnets["VmSubnet"].id
+    },
+    {
+      allowPublicIp = "Allow"
+      labSubnetName = "AzureBastionSubnet"
+      resourceId = module.vnet.subnets["AzureBastionSubnet"].id
+    }
+
+  ]
+  externalProviderResourceId = module.vnet.id
+  subnet_overrides = [
+    {
+      resourceId = module.vnet.subnets["VmSubnet"].id
+      labSubnetName = "VmSubnet"
+      sharedPublicIpAddressConfiguration = {
+        allowedPorts = [
+          {
+            backendPort       = 3389
+            transportProtocol = "Tcp"
+          },
+          {
+            backendPort       = 22
+            transportProtocol = "Tcp"
+          }
+        ]
+      }
+      useInVmCreationPermission    = "Allow"
+      usePublicIpAddressPermission = "Deny"
+    }
+  ]
 
   depends_on = [module.vnet]
 }
+
 
 # ------------------------------------------------------------------------------------------------------
 # Deploy network security group
@@ -231,17 +275,6 @@ module "bastion_nsg" {
       destination_address_prefix = "VirtualNetwork"
     },
     {
-      name                       = "AllowSshRdpInbound"
-      priority                   = 130
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_ranges    = ["22", "3389"]
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
       name                       = "AllowSshRdpOutbound"
       priority                   = 100
       direction                  = "Outbound"
@@ -264,13 +297,13 @@ module "bastion_nsg" {
       destination_address_prefix = "AzureCloud"
     },
     {
-      name                       = "AllowInternetHttpsOutbound"
+      name                       = "AllowInternetHttpHttpsOutbound"
       priority                   = 120
       direction                  = "Outbound"
       access                     = "Allow"
       protocol                   = "Tcp"
       source_port_range          = "*"
-      destination_port_range     = "443"
+      destination_port_ranges    = ["80", "443"]
       source_address_prefix      = "VirtualNetwork"
       destination_address_prefix = "Internet"
     }
@@ -278,13 +311,14 @@ module "bastion_nsg" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "vm_subnet_nsg_assoc" {
-  subnet_id                 = module.vnet.subnet_ids["${local.dev_test_lab_vnet_name}Subnet"]
+  subnet_id                 = module.vnet.subnets["VmSubnet"].id
   network_security_group_id = module.nsg.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "bastion_subnet_nsg_assoc" {
-  subnet_id                 = module.vnet.subnet_ids["AzureBastionSubnet"]
+  subnet_id                 = module.vnet.subnets["AzureBastionSubnet"].id
   network_security_group_id = module.bastion_nsg.id
+  depends_on = [ module.vnet ]
 }
 
 # ------------------------------------------------------------------------------------------------------
@@ -296,7 +330,7 @@ module "bastion_host" {
   name                       = local.bastion_host_name
   location                   = var.location
   resource_group_name        = azurerm_resource_group.rg.name
-  subnet_id                  = module.vnet.subnet_ids["AzureBastionSubnet"]
+  subnet_id                  = module.vnet.subnets["AzureBastionSubnet"].id
   log_analytics_workspace_id = module.log_analytics_workspace.id
 }
 
@@ -314,9 +348,9 @@ module "dev_test_lab_vms" {
   location            = var.location
   tags                = var.tags
   lab_id              = module.dev_test_lab.id
-  lab_vnet_id         = module.vnet.vnet_id
+  lab_vnet_id         = module.dev_test_lab_vnet.id
+  lab_subnet_name     = "VmSubnet"
 
-  lab_subnet_name         = "${local.dev_test_lab_vnet_name}Subnet"
   gallery_image_reference = local.vm_configs[var.environment][each.value.os_type].image_reference
   vm_size                 = local.vm_configs[var.environment][each.value.os_type].size
   storage_type            = local.vm_configs[var.environment][each.value.os_type].storage_type
@@ -327,6 +361,7 @@ module "dev_test_lab_vms" {
   log_analytics_workspace_id = module.log_analytics_workspace.workspace_id
 
   depends_on = [
-    azurerm_role_assignment.key_vault_secrets_officer
+    azurerm_role_assignment.key_vault_secrets_officer,
+    module.dev_test_lab_vnet
   ]
 }
