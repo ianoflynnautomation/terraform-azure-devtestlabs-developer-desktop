@@ -9,7 +9,7 @@ data "azurerm_client_config" "current" {}
 resource "azurerm_resource_group" "rg" {
   name     = local.resource_group_name
   location = var.location
-  tags     = var.tags
+  tags     = local.tags
 }
 
 # ------------------------------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ module "log_analytics_workspace" {
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
   solution_plan_map   = var.solution_plan_map
-  tags                = var.tags
+  tags                = local.tags
 }
 
 # ------------------------------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ module "key_vault" {
   resource_group_name             = azurerm_resource_group.rg.name
   tenant_id                       = data.azurerm_client_config.current.tenant_id
   sku_name                        = "standard"
-  tags                            = var.tags
+  tags                            = local.tags
   enabled_for_deployment          = var.key_vault_enabled_for_deployment
   enabled_for_disk_encryption     = var.key_vault_enabled_for_disk_encryption
   enabled_for_template_deployment = var.key_vault_enabled_for_template_deployment
@@ -78,6 +78,13 @@ resource "azurerm_key_vault_secret" "ssh_private_key" {
   depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
 }
 
+resource "azurerm_key_vault_secret" "github_token" {
+  name         = "GITHUB-SECURITY-TOKEN"
+  value        = var.security_token
+  key_vault_id = module.key_vault.id
+  depends_on   = [azurerm_role_assignment.key_vault_secrets_officer]
+}
+
 # ------------------------------------------------------------------------------------------------------
 # Deploy virtual networks
 # ------------------------------------------------------------------------------------------------------
@@ -89,7 +96,7 @@ module "vnet" {
   location                   = var.location
   resource_group_name        = azurerm_resource_group.rg.name
   log_analytics_workspace_id = module.log_analytics_workspace.id
-  tags                       = var.tags
+  tags                       = local.tags
 
   subnets = [
     {
@@ -107,11 +114,8 @@ module "vnet" {
       default_outbound_access_enabled : true
       delegation : null
       private_endpoint_network_policies : "Disabled"
-
     }
-
   ]
-
 }
 
 # ------------------------------------------------------------------------------------------------------
@@ -120,13 +124,12 @@ module "vnet" {
 
 
 module "dev_test_lab" {
-  source = "./modules/devtestlab"
-
+  source              = "./modules/devtestlab"
   lab_name            = local.dev_test_lab_name
   location            = var.location
   parent_id           = azurerm_resource_group.rg.id
   resource_group_name = azurerm_resource_group.rg.name
-  tags                = var.tags
+  tags                = local.tags
   lab_storage_type    = var.dtl_storage_type
   announcement        = var.dtl_announcement == null ? local.default_dtl_announcement : var.dtl_announcement
 
@@ -137,12 +140,12 @@ module "dev_test_lab_artifiact_source" {
   artifact_source_name = var.artifact_source_name
   parent_id            = module.dev_test_lab.id
   location             = var.location
-  tags                 = var.tags
+  tags                 = local.tags
   #arm_template_folder_path = var.arm_template_folder_path
   branch_ref     = var.branch_ref
   display_name   = var.display_name
   folder_path    = var.folder_path
-  security_token = var.security_token
+  security_token = azurerm_key_vault_secret.github_token.value
   source_type    = var.source_type
   status         = var.status
   uri            = var.uri
@@ -154,13 +157,12 @@ module "dev_test_lab_artifiact_source" {
 # ------------------------------------------------------------------------------------------------------
 
 module "dev_test_lab_vnet" {
-  source = "./modules/devtestlabs_vnet"
-
-  name      = local.dev_test_lab_vnet_name
-  location  = var.location
-  parent_id = module.dev_test_lab.id
-  tags      = var.tags
-
+  source                     = "./modules/devtestlabs_vnet"
+  name                       = local.dev_test_lab_vnet_name
+  location                   = var.location
+  parent_id                  = module.dev_test_lab.id
+  tags                       = local.tags
+  externalProviderResourceId = module.vnet.id
   allowed_subnets = [
     {
       allowPublicIp = "Deny"
@@ -172,30 +174,21 @@ module "dev_test_lab_vnet" {
       labSubnetName = "AzureBastionSubnet"
       resourceId    = module.vnet.subnets["AzureBastionSubnet"].id
     }
-
   ]
-  externalProviderResourceId = module.vnet.id
   subnet_overrides = [
     {
       resourceId    = module.vnet.subnets["VmSubnet"].id
       labSubnetName = "VmSubnet"
       sharedPublicIpAddressConfiguration = {
         allowedPorts = [
-          {
-            backendPort       = 3389
-            transportProtocol = "Tcp"
-          },
-          {
-            backendPort       = 22
-            transportProtocol = "Tcp"
-          }
+          { backendPort = 3389, transportProtocol = "Tcp" },
+          { backendPort = 22, transportProtocol = "Tcp" }
         ]
       }
       useInVmCreationPermission    = "Allow"
       usePublicIpAddressPermission = "Deny"
     }
   ]
-
   depends_on = [module.vnet]
 }
 
@@ -211,42 +204,7 @@ module "nsg" {
   resource_group_name        = azurerm_resource_group.rg.name
   log_analytics_workspace_id = module.log_analytics_workspace.id
   tags                       = local.tags
-
-  security_rules = [
-    {
-      name                       = "AllowSshInbound"
-      priority                   = 100
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "22"
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
-      name                       = "AllowRdpInbound"
-      priority                   = 110
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "3389"
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
-      name                       = "AllowInternetOutbound"
-      priority                   = 100
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "*"
-      source_port_range          = "*"
-      destination_port_range     = "*"
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "Internet"
-    }
-  ]
+  security_rules             = local.vm_nsg_rules
 }
 
 module "bastion_nsg" {
@@ -256,75 +214,7 @@ module "bastion_nsg" {
   resource_group_name        = azurerm_resource_group.rg.name
   log_analytics_workspace_id = module.log_analytics_workspace.id
   tags                       = local.tags
-
-  security_rules = [
-    {
-      name                       = "AllowHttpsInbound"
-      priority                   = 100
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "443"
-      source_address_prefix      = "Internet"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
-      name                       = "AllowGatewayManagerInbound"
-      priority                   = 110
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "443"
-      source_address_prefix      = "GatewayManager"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
-      name                       = "AllowAzureLoadBalancerInbound"
-      priority                   = 120
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "443"
-      source_address_prefix      = "AzureLoadBalancer"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
-      name                       = "AllowSshRdpOutbound"
-      priority                   = 100
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_ranges    = ["22", "3389"]
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "VirtualNetwork"
-    },
-    {
-      name                       = "AllowAzureCloudOutbound"
-      priority                   = 110
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "443"
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "AzureCloud"
-    },
-    {
-      name                       = "AllowInternetHttpHttpsOutbound"
-      priority                   = 120
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_ranges    = ["80", "443"]
-      source_address_prefix      = "VirtualNetwork"
-      destination_address_prefix = "Internet"
-    }
-  ]
+  security_rules             = local.bastion_nsg_rules
 }
 
 resource "azurerm_subnet_network_security_group_association" "vm_subnet_nsg_assoc" {
@@ -359,15 +249,13 @@ module "bastion_host" {
 module "dev_test_lab_vms" {
   source   = "./modules/devtestlab_vm"
   for_each = local.virtual_machines
-
   vm_name             = each.key
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
-  tags                = var.tags
+  tags                = local.tags
   lab_id              = module.dev_test_lab.id
   lab_vnet_id         = module.dev_test_lab_vnet.id
   lab_subnet_name     = "VmSubnet"
-
   gallery_image_reference = local.vm_configs[var.environment][each.value.os_type].image_reference
   vm_size                 = local.vm_configs[var.environment][each.value.os_type].size
   storage_type            = local.vm_configs[var.environment][each.value.os_type].storage_type
@@ -376,7 +264,6 @@ module "dev_test_lab_vms" {
   key_vault_id               = module.key_vault.id
   enable_log_analytics       = var.enable_log_analytics
   log_analytics_workspace_id = module.log_analytics_workspace.workspace_id
-
   depends_on = [
     azurerm_role_assignment.key_vault_secrets_officer,
     module.dev_test_lab_vnet

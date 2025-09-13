@@ -7,7 +7,7 @@ terraform {
   }
 }
 
-resource "azapi_resource" "devtestlabs_artifact_source" {
+resource "azapi_resource" "devtestlab_artifact_source" {
   type      = "Microsoft.DevTestLab/labs/artifactsources@2018-09-15"
   name      = var.artifact_source_name
   parent_id = var.parent_id
