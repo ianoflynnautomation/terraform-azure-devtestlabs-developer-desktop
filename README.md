@@ -29,6 +29,18 @@ This infrastructure creates a scalable DevTest Lab environment that provides:
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
+│                    Network Infrastructure                   │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────────────────────┐ │
+│  │ Virtual Network │  │        Azure Bastion            │ │
+│  │                 │  │                                 │ │
+│  │ • Subnets       │  │ • Secure RDP/SSH Access        │ │
+│  │ • NSG Rules     │  │ • No Public IPs Required       │ │
+│  │ • Private Links │  │ • Log Analytics Integration    │ │
+│  └─────────────────┘  └─────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
 │                Supporting Infrastructure                    │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
@@ -127,12 +139,37 @@ terraform destroy -var-file="main.tfvars.json"
   - Network access controls
   - Integration with VMs for password management
 
-### 5. Log Analytics Workspace
+### 5. Virtual Network
+- **Purpose**: Secure network infrastructure for DevTest Lab
+- **Features**:
+  - Configurable address space and subnets
+  - Subnet delegation support
+  - Private endpoint and private link service policies
+  - VM protection alerts via Log Analytics
+
+### 6. Azure Bastion
+- **Purpose**: Secure remote access to VMs without exposing RDP/SSH ports
+- **Features**:
+  - Standard SKU with static public IP
+  - Browser-based RDP/SSH access
+  - No need for public IPs on VMs
+  - Integrated monitoring and diagnostics
+
+### 7. Network Security Groups
+- **Purpose**: Network-level security controls
+- **Features**:
+  - Custom security rules
+  - Application security group support
+  - Port and address prefix configurations
+  - Network security event logging
+
+### 8. Log Analytics Workspace
 - **Purpose**: Centralized monitoring and logging
 - **Features**:
   - Container Insights solution
   - VM performance monitoring
   - Custom log collection
+  - Network security monitoring
 
 ## 🔧 Terraform Modules
 
@@ -185,6 +222,79 @@ Sets up centralized logging and monitoring.
 
 ### Storage Account Module (`modules/storage_account/`)
 Provides storage for artifacts and VM images (currently commented out).
+
+### Bastion Host Module (`modules/bastion_host/`)
+Deploys Azure Bastion for secure remote access to VMs without exposing RDP/SSH ports.
+
+**Key Features**:
+- Standard SKU public IP with static allocation
+- Integrated with Log Analytics for monitoring
+- Diagnostic logging for audit and DDoS protection
+- Secure access to VMs without public IPs
+
+**Variables**:
+- `name`: Name of the bastion host
+- `resource_group_name`: Resource group name
+- `location`: Azure region
+- `subnet_id`: Subnet ID for bastion host
+- `log_analytics_workspace_id`: Log Analytics workspace for diagnostics
+- `tags`: Resource tags
+
+### Virtual Network Module (`modules/virtual_network/`)
+Creates Azure Virtual Network with configurable subnets and network policies.
+
+**Key Features**:
+- Configurable address space and subnets
+- Subnet delegation support
+- Private endpoint and private link service policies
+- Log Analytics integration for monitoring
+- VM protection alerts
+
+**Variables**:
+- `name`: Virtual network name
+- `address_space`: VNet address space (CIDR blocks)
+- `subnets`: List of subnet configurations
+- `resource_group_name`: Resource group name
+- `location`: Azure region
+- `log_analytics_workspace_id`: Log Analytics workspace for diagnostics
+- `tags`: Resource tags
+
+### DevTest Labs VNet Module (`modules/devtestlabs_vnet/`)
+Manages virtual network registration within Azure DevTest Labs.
+
+**Key Features**:
+- DevTest Labs-specific VNet integration
+- Subnet override configurations
+- Public IP address permissions
+- VM creation permissions
+- External provider resource integration
+
+**Variables**:
+- `name`: VNet registration name
+- `parent_id`: DevTest Lab parent resource ID
+- `externalProviderResourceId`: Associated Azure VNet resource ID
+- `subnet_overrides`: Subnet configuration overrides
+- `allowed_subnets`: List of allowed subnets
+- `location`: Azure region
+- `tags`: Resource tags
+
+### Network Security Group Module (`modules/network_security_group/`)
+Creates and configures Network Security Groups with custom security rules.
+
+**Key Features**:
+- Dynamic security rule creation
+- Support for application security groups
+- Port range and address prefix configurations
+- Log Analytics integration for monitoring
+- Network security event logging
+
+**Variables**:
+- `name`: NSG name
+- `resource_group_name`: Resource group name
+- `location`: Azure region
+- `security_rules`: List of security rules
+- `log_analytics_workspace_id`: Log Analytics workspace for diagnostics
+- `tags`: Resource tags
 
 ## 🎨 Available Artifacts
 
@@ -274,13 +384,18 @@ The repository includes a GitHub Actions workflow (`.github/workflows/azure-dev.
 ### Security
 - Key Vault integration for credential management
 - RBAC-based access control
-- Network security groups
+- Network security groups with custom rules
+- Azure Bastion for secure remote access
+- Private network infrastructure
 - Encrypted storage
 
 ### Monitoring
 - Log Analytics workspace integration
 - Container Insights for Docker workloads
 - VM performance metrics
+- Network security monitoring
+- Bastion host audit logs
+- DDoS protection monitoring
 - Custom log collection
 
 ## 🛠️ Troubleshooting

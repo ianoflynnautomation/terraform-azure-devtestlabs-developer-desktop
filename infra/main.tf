@@ -133,6 +133,27 @@ module "dev_test_lab" {
 }
 
 # ------------------------------------------------------------------------------------------------------
+# Deploy dev test lab
+# ------------------------------------------------------------------------------------------------------
+
+
+module "dev_test_lab_artifiact_source" {
+  source               = "./modules/devtestlab_artifact_sources"
+  artifact_source_name = var.artifact_source_name
+  parent_id            = module.dev_test_lab.id
+  location             = var.location
+  tags                 = var.tags
+  #arm_template_folder_path = var.arm_template_folder_path
+  branch_ref     = var.branch_ref
+  display_name   = var.display_name
+  folder_path    = var.folder_path
+  security_token = var.security_token
+  source_type    = var.source_type
+  status         = var.status
+  uri            = var.uri
+}
+
+# ------------------------------------------------------------------------------------------------------
 # Deploy dev test lab vnet
 # ------------------------------------------------------------------------------------------------------
 
@@ -148,19 +169,19 @@ module "dev_test_lab_vnet" {
     {
       allowPublicIp = "Deny"
       labSubnetName = "VmSubnet"
-      resourceId = module.vnet.subnets["VmSubnet"].id
+      resourceId    = module.vnet.subnets["VmSubnet"].id
     },
     {
       allowPublicIp = "Allow"
       labSubnetName = "AzureBastionSubnet"
-      resourceId = module.vnet.subnets["AzureBastionSubnet"].id
+      resourceId    = module.vnet.subnets["AzureBastionSubnet"].id
     }
 
   ]
   externalProviderResourceId = module.vnet.id
   subnet_overrides = [
     {
-      resourceId = module.vnet.subnets["VmSubnet"].id
+      resourceId    = module.vnet.subnets["VmSubnet"].id
       labSubnetName = "VmSubnet"
       sharedPublicIpAddressConfiguration = {
         allowedPorts = [
@@ -318,7 +339,7 @@ resource "azurerm_subnet_network_security_group_association" "vm_subnet_nsg_asso
 resource "azurerm_subnet_network_security_group_association" "bastion_subnet_nsg_assoc" {
   subnet_id                 = module.vnet.subnets["AzureBastionSubnet"].id
   network_security_group_id = module.bastion_nsg.id
-  depends_on = [ module.vnet ]
+  depends_on                = [module.vnet]
 }
 
 # ------------------------------------------------------------------------------------------------------
