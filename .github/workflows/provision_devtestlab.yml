@@ -1,9 +1,8 @@
-# Run when commits are pushed to main
+name: Deploy to Azure with OIDC
+
 on:
   workflow_dispatch:
   push:
-    # Run when commits are pushed to mainline branch (main or master)
-    # Set this to the mainline branch you are using
     branches:
       - main
 permissions:
@@ -27,35 +26,24 @@ jobs:
       - name: Install azd
         uses: Azure/setup-azd@v1.0.0
 
-      - name: Login az
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Set az account
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az account set --subscription ${{vars.AZURE_SUBSCRIPTION_ID}}
-
       # - name: Login az
       #   uses: azure/login@v1
       #   with:
       #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in with Azure (Client Credentials)
-        run: |
-          $info = $Env:AZURE_CREDENTIALS | ConvertFrom-Json -AsHashtable;
-          Write-Host "::add-mask::$($info.clientSecret)"
+      # - name: Set az account
+      #   uses: azure/CLI@v1
+      #   with:
+      #     inlineScript: |
+      #       az account set --subscription ${{vars.AZURE_SUBSCRIPTION_ID}}
 
-          azd auth login `
-            --client-id "$($info.clientId)" `
-            --client-secret "$($info.clientSecret)" `
-            --tenant-id "$($info.tenantId)"
-        shell: pwsh
-        env:
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-
+      - name: Login to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
 
       - name: Provision Infrastructure
         run: azd provision --no-prompt
