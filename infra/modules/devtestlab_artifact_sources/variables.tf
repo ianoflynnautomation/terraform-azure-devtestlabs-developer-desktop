@@ -110,4 +110,16 @@ variable "uri" {
     condition     = length(var.uri) <= 2048
     error_message = "The URI must be 2048 characters or less."
   }
+
+}
+
+variable "artifacts" {
+  description = "List of artifacts to create in the artifact source."
+  type = list(object({
+    name = string
+  }))
+  validation {
+    condition     = alltrue([for a in var.artifacts : length(a.name) > 0 && length(a.name) <= 100])
+    error_message = "Each artifact name must be between 1 and 100 characters."
+  }
 }

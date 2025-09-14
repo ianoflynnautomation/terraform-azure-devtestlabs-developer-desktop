@@ -149,12 +149,10 @@ module "dev_test_lab_artifiact_source" {
   source_type    = var.source_type
   status         = var.status
   uri            = var.uri
+  artifacts = [
+    { name = "windows-jmeter" },
+  ]
 }
-
-
-# ------------------------------------------------------------------------------------------------------
-# Deploy dev test lab vnet
-# ------------------------------------------------------------------------------------------------------
 
 module "dev_test_lab_vnet" {
   source                     = "./modules/devtestlabs_vnet"
@@ -190,6 +188,30 @@ module "dev_test_lab_vnet" {
     }
   ]
   depends_on = [module.vnet]
+}
+
+module "dev_test_lab_vms" {
+  source                  = "./modules/devtestlab_vm"
+  for_each                = local.virtual_machines
+  vm_name                 = each.key
+  resource_group_name     = azurerm_resource_group.rg.name
+  location                = var.location
+  tags                    = local.tags
+  lab_id                  = module.dev_test_lab.id
+  lab_vnet_id             = module.dev_test_lab_vnet.id
+  lab_subnet_name         = "VmSubnet"
+  gallery_image_reference = local.vm_configs[var.environment][each.value.os_type].image_reference
+  vm_size                 = local.vm_configs[var.environment][each.value.os_type].size
+  storage_type            = local.vm_configs[var.environment][each.value.os_type].storage_type
+  admin_username          = each.value.admin_username
+  # artifacts                   = each.value.artifacts
+  key_vault_id               = module.key_vault.id
+  enable_log_analytics       = var.enable_log_analytics
+  log_analytics_workspace_id = module.log_analytics_workspace.workspace_id
+  depends_on = [
+    azurerm_role_assignment.key_vault_secrets_officer,
+    module.dev_test_lab_vnet
+  ]
 }
 
 
@@ -241,31 +263,3 @@ module "bastion_host" {
   log_analytics_workspace_id = module.log_analytics_workspace.id
 }
 
-
-# ------------------------------------------------------------------------------------------------------
-# Deploy dev test lab vms
-# ------------------------------------------------------------------------------------------------------
-
-module "dev_test_lab_vms" {
-  source   = "./modules/devtestlab_vm"
-  for_each = local.virtual_machines
-  vm_name             = each.key
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = var.location
-  tags                = local.tags
-  lab_id              = module.dev_test_lab.id
-  lab_vnet_id         = module.dev_test_lab_vnet.id
-  lab_subnet_name     = "VmSubnet"
-  gallery_image_reference = local.vm_configs[var.environment][each.value.os_type].image_reference
-  vm_size                 = local.vm_configs[var.environment][each.value.os_type].size
-  storage_type            = local.vm_configs[var.environment][each.value.os_type].storage_type
-  admin_username          = each.value.admin_username
-  # artifacts                   = each.value.artifacts
-  key_vault_id               = module.key_vault.id
-  enable_log_analytics       = var.enable_log_analytics
-  log_analytics_workspace_id = module.log_analytics_workspace.workspace_id
-  depends_on = [
-    azurerm_role_assignment.key_vault_secrets_officer,
-    module.dev_test_lab_vnet
-  ]
-}
