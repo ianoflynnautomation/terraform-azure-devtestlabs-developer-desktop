@@ -29,11 +29,11 @@ resource "azapi_resource" "devtestlab_artifact_source" {
 }
 
 
-resource "azapi_resource" "artifact" {
-  type      = "Microsoft.DevTestLab/labs/artifactsources/artifacts@2018-09-15"
-  for_each  = { for artifact in var.artifacts : artifact.name => artifact }
-  name      = each.value.name
-  parent_id = azapi_resource.devtestlab_artifact_source.id
+# resource "azapi_resource" "artifact" {
+#   type      = "Microsoft.DevTestLab/labs/artifactsources/artifacts@2018-09-15"
+#   for_each  = { for artifact in var.artifacts : artifact.name => artifact }
+#   name      = each.value.name
+#   parent_id = azapi_resource.devtestlab_artifact_source.id
 
-  depends_on = [azapi_resource.devtestlab_artifact_source]
-}
+#   depends_on = [azapi_resource.devtestlab_artifact_source]
+# }

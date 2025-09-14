@@ -197,7 +197,6 @@ variable "folder_path" {
 variable "security_token" {
   description = "The security token (e.g., Personal Access Token) for accessing the source control repository. Should be sourced from a Key Vault for security."
   type        = string
-  default     = ""
   sensitive   = true
   validation {
     condition     = length(var.security_token) <= 255
@@ -228,7 +227,7 @@ variable "status" {
 variable "uri" {
   description = "The URI of the source control repository (e.g., https://github.com/myorg/myrepo)."
   type        = string
-  default     = "https://github.com/ianoflynnautomation/terraform-azure-devtestlabs-developer-desktop"
+  default     = "https://github.com/ianoflynnautomation/terraform-azure-devtestlabs-developer-desktop.git"
   validation {
     condition     = length(var.uri) <= 2048
     error_message = "The URI must be 2048 characters or less."

@@ -149,9 +149,9 @@ module "dev_test_lab_artifiact_source" {
   source_type    = var.source_type
   status         = var.status
   uri            = var.uri
-  artifacts = [
-    { name = "windows-jmeter" },
-  ]
+  # artifacts = [
+  #   { name = "windows-jmeter" },
+  # ]
 }
 
 module "dev_test_lab_vnet" {
