@@ -18,10 +18,3 @@ output "key_vault_uri" {
   value       = module.key_vault.uri
 }
 
-output "vm_passwords_secret_names" {
-  description = "A map of VM names to the names of their password secrets in Key Vault."
-  value = {
-    for name, vm in module.dev_test_lab_vms :
-    name => vm.password_secret_name
-  }
-}
